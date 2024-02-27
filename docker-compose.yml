@@ -1,0 +1,30 @@
+version: '3.7'
+
+services:
+  database:
+    container_name: database
+    image: 'postgres'
+#    restart: on-failure
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+
+  my_cloud:
+    build: .
+    links:
+      - database
+#    restart: on-failure
+    ports:
+      - "8075:8075"
+    environment:
+      - SPRING_LIQUIBASE_CHANGE-LOG=classpath:liquibase/db.changelog-master.xml
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/postgres
+      - SPRING_LIQUIBASE_URL=jdbc:postgresql://database:5432/postgres
+      - SPRING_LIQUIBASE_USER=postgres
+      - SPRING_LIQUIBASE_PASSWORD=password
+      - SPRING_LIQUIBASE_DEFAULT-SCHEMA=public
+    depends_on:
+      - database
