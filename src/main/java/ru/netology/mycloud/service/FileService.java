@@ -33,17 +33,6 @@ public class FileService {
     @Value("${upload.path}")
     private String uploadPath;
 
-    public ResponseEntity findFilesByToken(String token) {
-        String username = jwtTokenProvider.getUsername(token);
-        if (jwtTokenProvider.validateToken(token)) {
-            List<FileModel> filesList = fileRepository.findFilesByUsername(username);
-            return ResponseEntity.status(200).body(filesList);
-        } else {
-            return ResponseEntity.status(401).body("Unauthorized error");
-        }
-    }
-
-
     public boolean saveFile(MultipartFile multipartFile, String token) throws IOException {
         String username = jwtTokenProvider.getUsername(token);
         String uuidFile = UUID.randomUUID().toString();
@@ -70,33 +59,6 @@ public class FileService {
         return true;
     }
 
-    public ResponseEntity saveFileResponse(MultipartFile multipartFile, String token) throws IOException {
-        if (jwtTokenProvider.validateToken(token)) {
-            if (saveFile(multipartFile, token)) {
-                return ResponseEntity.ok("Success upload");
-            } else {
-                return ResponseEntity.status(400).body("Error input data");
-            }
-        } else {
-            return ResponseEntity.status(401).body("Unauthorized error");
-        }
-    }
-
-    public ResponseEntity deleteFile(String token, String fileName) {
-        if (jwtTokenProvider.validateToken(token)) {
-            var file = new File(uploadPath + fileName);
-            if (file.exists()) {
-                file.delete();
-                fileRepository.deleteFileModelByFilename(fileName);
-                log.info("IN deleteFile was deleted file {}", fileName);
-                return ResponseEntity.ok("Success deleted");
-            }
-            return ResponseEntity.status(400).body("Error input data");
-        } else {
-            return ResponseEntity.status(401).body("Unauthorized error");
-        }
-    }
-
     public File getFile(String fileName) throws FileNotFoundException {
         var file = new File(uploadPath + fileName);
         if (file.exists()) {
@@ -104,60 +66,6 @@ public class FileService {
             return file;
         } else {
             throw new FileNotFoundException("File not found");
-        }
-    }
-
-    public ResponseEntity getResponseWithFile(String token, String fileName) {
-        if (jwtTokenProvider.validateToken(token)) {
-            File file = null;
-            try {
-                file = getFile(fileName);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-            Path path = Paths.get(file.getAbsolutePath());
-            byte[] bytes = new byte[0];
-            String probeContentType = null;
-            try {
-                bytes = Files.readAllBytes(path);
-                probeContentType = Files.probeContentType(path);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            log.info("IN getResponseWithFile was response 200, file {}", fileName);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            ContentDisposition.attachment().filename(file.getName()).build().toString())
-                    .contentType(probeContentType != null ? MediaType.valueOf(probeContentType) : MediaType.APPLICATION_OCTET_STREAM)
-                    .body(bytes);
-        } else {
-            return ResponseEntity.status(401).body("Unauthorized error");
-        }
-    }
-
-
-    public ResponseEntity renameFile(String token, String fileName, String newName) {
-        if (jwtTokenProvider.validateToken(token)) {
-            var username = jwtTokenProvider.getUsername(token);
-            var file = new File(uploadPath + fileName);
-            if (!file.exists()) {
-                return ResponseEntity.status(400).body("File not found");
-            } else {
-                FileModel renamedFile = new FileModel()
-                        .setFilename(newName)
-                        .setSize(file.length())
-                        .setUsername(username);
-                fileRepository.deleteFileModelByFilename(fileName);
-                fileRepository.save(renamedFile);
-                log.info("IN renameFile file:{} was renamed into: {}", fileName, newName);
-                if (file.renameTo(new File(uploadPath + newName))) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-                }
-            }
-        } else {
-            return ResponseEntity.status(401).body("Unauthorized error");
         }
     }
 }

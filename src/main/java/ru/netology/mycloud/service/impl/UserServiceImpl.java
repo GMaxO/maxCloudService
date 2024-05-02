@@ -19,28 +19,9 @@ import java.util.Map;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
-
     @Override
     public User save(User user) {
         return userRepository.save(user);
-    }
-
-    @Override
-    public ResponseEntity login(AuthRequestDTO authRequestDTO, String token) {
-        try {
-            String login = authRequestDTO.getLogin();
-            User user = findUserByLogin(login);
-
-            if (user == null) {
-                throw new UsernameNotFoundException("User with login: " + login + " not found");
-            }
-
-            Map<Object, Object> response = new HashMap<>();
-            response.put("auth-token", token);
-            return ResponseEntity.ok(response);
-        } catch (AuthenticationException e) {
-            throw new BadCredentialsException("Invalid login or password");
-        }
     }
 
     public UserServiceImpl(UserRepository userRepository) {

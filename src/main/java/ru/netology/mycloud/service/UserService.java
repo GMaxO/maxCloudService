@@ -9,6 +9,4 @@ public interface UserService {
 
     User save(User user);
 
-    ResponseEntity login(AuthRequestDTO authRequestDTO, String token);
-
 }
